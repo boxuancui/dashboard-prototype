@@ -21,7 +21,7 @@ def get_userprofiles(argv):
 	except client.AccessTokenRefreshError:
 		print "The credentials have been revoked or expired, please re-run the application to re-authorize."
 
-	# config.profile_id = raw_input("Enter profile ID: ")
+	# config.profile_id = raw_input("----> Enter profile ID: ")
 	print "Profile ID", config.profile_id, "selected."
 
 
@@ -44,7 +44,7 @@ def get_reports(argv, profile_id):
 	except client.AccessTokenRefreshError:
 		print "The credentials have been revoked or expired, please re-run the application to re-authorize."
 
-	# config.report_id = raw_input("Enter report ID: ")
+	# config.report_id = raw_input("----> Enter report ID: ")
 	print "Report ID", config.report_id, "selected."
 
 
