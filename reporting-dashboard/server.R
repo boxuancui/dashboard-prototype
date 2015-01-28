@@ -2,7 +2,7 @@ library(shiny)
 library(data.table)
 library(reshape2)
 library(scales)
-library(rHighcharts)
+library(rCharts)
 
 shinyServer(function(input, output) {
   raw_data <- reactive({
@@ -57,13 +57,13 @@ shinyServer(function(input, output) {
     dcast(melt(data, id.vars="Group"), variable ~ Group)
   })
   
-  output$campaign_ctr <- renderChart({
+  output$campaign_ctr <- renderChart2({
     input.data <- campaign_data()
-    
     data <- data.frame(input.data[, list(CTR)])
     rownames(data) <- c("Control", "Test")
-    a <- rHighcharts:::Chart$new()
-    a$chart(type="column")
+    
+    a <- Highcharts$new()
+    a$chart(height=380, width=380, type="column")
     a$title(text="CTR")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
@@ -71,13 +71,13 @@ shinyServer(function(input, output) {
     a
   })
   
-  output$campaign_vtr <- renderChart({
+  output$campaign_vtr <- renderChart2({
     input.data <- campaign_data()
-    
     data <- data.frame(input.data[, list(VTR)])
     rownames(data) <- c("Control", "Test")
-    a <- rHighcharts:::Chart$new()
-    a$chart(type="column")
+    
+    a <- Highcharts$new()
+    a$chart(height=380, width=380, type="column")
     a$title(text="VTR")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
@@ -85,13 +85,13 @@ shinyServer(function(input, output) {
     a
   })
   
-  output$campaign_cpm <- renderChart({
+  output$campaign_cpm <- renderChart2({
     input.data <- campaign_data()
-    
     data <- data.frame(input.data[, list(CPM)])
     rownames(data) <- c("Control", "Test")
-    a <- rHighcharts:::Chart$new()
-    a$chart(type="column")
+    
+    a <- Highcharts$new()
+    a$chart(height=380, width=380, type="column")
     a$title(text="CPM")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
@@ -99,13 +99,13 @@ shinyServer(function(input, output) {
     a
   })
   
-  output$campaign_cpc <- renderChart({
+  output$campaign_cpc <- renderChart2({
     input.data <- campaign_data()
-    
     data <- data.frame(input.data[, list(CPC)])
     rownames(data) <- c("Control", "Test")
-    a <- rHighcharts:::Chart$new()
-    a$chart(type="column")
+    
+    a <- Highcharts$new()
+    a$chart(height=380, width=380, type="column")
     a$title(text="CPC")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
@@ -113,13 +113,13 @@ shinyServer(function(input, output) {
     a
   })
   
-  output$campaign_cpv <- renderChart({
+  output$campaign_cpv <- renderChart2({
     input.data <- campaign_data()
-    
     data <- data.frame(input.data[, list(CPV)])
     rownames(data) <- c("Control", "Test")
-    a <- rHighcharts:::Chart$new()
-    a$chart(type="column")
+    
+    a <- Highcharts$new()
+    a$chart(height=380, width=380, type="column")
     a$title(text="CPV")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
@@ -151,7 +151,7 @@ shinyServer(function(input, output) {
     data
   })
   
-  output$item_ctr_cpc <- renderChart({
+  output$item_ctr_cpc <- renderChart2({
     input.date <- input$date
     input.data <- raw_data()
     
@@ -166,7 +166,7 @@ shinyServer(function(input, output) {
     data[, CPC:=round(Spend/Clicks, 2)]
     plot.data <- data.frame(data[, list(LineItem, Impressions, CTR, CPC)])
     
-    a <- rHighcharts:::Chart$new()
+    a <- Highcharts$new()
     a$chart(type="bubble", height=768, width=1024, zoomType="xy")
     a$title(text="Line Item Performance")
     a$xAxis(title=list(text="CPC"))
@@ -178,7 +178,7 @@ shinyServer(function(input, output) {
     return(a)
   })
   
-  output$time_dim <- renderChart({
+  output$time_dim <- renderChart2({
     time_p <- input$time_p
     input.data <- raw_data()
     
@@ -195,17 +195,18 @@ shinyServer(function(input, output) {
     data[, CPM:=round(1000*Spend/Impressions, 2)]
     data[, CPC:=round(Spend/Clicks, 2)]
     data[, CPV:=round(Spend/ViewThroughs, 2)]
-    data <- data.frame(data[order(Date)])
-    test.ind <- which(data$Group=="Test")
-    control.ind <- which(data$Group=="Control")
+    data <- data[order(Date)]
+    plot.data <- data.frame(dcast(melt(data, id.vars=c("Group", "Date"), measure.vars=time_p), Date~Group))
+    rownames(plot.data) <- plot.data$Date
+    plot.data <- subset(plot.data, select=-Date)
+    print(plot.data)
     
-    a <- rHighcharts:::Chart$new()
+    a <- Highcharts$new()
     a$chart(height=768, width=1024, zoomType="xy")
     a$title(text="Daily Test Line Items Performance")
     a$xAxis(categories=data$Date[test.ind], labels=list(rotation=-45))
     a$yAxis(title=list(text=time_p))
-    a$data(x=data$Date[test.ind], y=data[test.ind, time_p], type="line", name="Test")
-    a$data(x=data$Date[control.ind], y=data[control.ind, time_p], type="line", name="Control")
+    a$data(plot.data)
     return(a)
   })
 })

@@ -1,6 +1,6 @@
 library(shiny)
 library(shinythemes)
-library(rHighcharts)
+library(rCharts)
 
 shinyUI(
   navbarPage(
@@ -11,7 +11,7 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          dateInput("date", label="Enter Date: ", value=(Sys.Date()-2), min="2014-12-27", max=(Sys.Date()-1))
+          dateInput("date", label="Enter Date: ", value=(Sys.Date()-1), min="2014-12-27", max=(Sys.Date()-1))
         ),
         mainPanel(
           tabsetPanel(
@@ -20,17 +20,17 @@ shinyUI(
               fluidPage(
                 fluidRow(
                   column(4, br(), br(), tableOutput("campaign_stats")),
-                  column(4, chartOutput("campaign_ctr")),
-                  column(4, chartOutput("campaign_vtr"))
+                  column(4, showOutput("campaign_ctr", "highcharts")),
+                  column(4, showOutput("campaign_vtr", "highcharts"))
                 ),
                 fluidRow(
-                  column(4, chartOutput("campaign_cpm")),
-                  column(4, chartOutput("campaign_cpc")),
-                  column(4, chartOutput("campaign_cpv"))
+                  column(4, showOutput("campaign_cpm", "highcharts")),
+                  column(4, showOutput("campaign_cpc", "highcharts")),
+                  column(4, showOutput("campaign_cpv", "highcharts"))
                 )
               )
             ),
-            tabPanel("Line Item", chartOutput("item_ctr_cpc")),
+            tabPanel("Line Item", showOutput("item_ctr_cpc", "highcharts")),
             tabPanel("Performance Table", dataTableOutput("item_stats"))
           )
         )
@@ -41,9 +41,9 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CTR")
+          selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CPC")
         ),
-        mainPanel(chartOutput("time_dim"))
+        mainPanel(showOutput("time_dim", "highcharts"))
       )
     )
   )
