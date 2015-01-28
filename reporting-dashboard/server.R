@@ -199,12 +199,11 @@ shinyServer(function(input, output) {
     plot.data <- data.frame(dcast(melt(data, id.vars=c("Group", "Date"), measure.vars=time_p), Date~Group))
     rownames(plot.data) <- plot.data$Date
     plot.data <- subset(plot.data, select=-Date)
-    print(plot.data)
     
     a <- Highcharts$new()
     a$chart(height=768, width=1024, zoomType="xy")
     a$title(text="Daily Test Line Items Performance")
-    a$xAxis(categories=data$Date[test.ind], labels=list(rotation=-45))
+    a$xAxis(categories=rownames(plot.data), labels=list(rotation=-45))
     a$yAxis(title=list(text=time_p))
     a$data(plot.data)
     return(a)
