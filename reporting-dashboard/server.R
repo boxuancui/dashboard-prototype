@@ -235,4 +235,52 @@ shinyServer(function(input, output) {
     a$data(plot.data)
     return(a)
   })
+  
+  output$item_playback <- renderChart2({
+    x_axis <- input$item_playback_x
+    y_axis <- input$item_playback_y
+    size <- input$item_playback_size
+    slider_day <- input$item_playback_day
+    input.data <- raw_data()
+    
+    days <- data.table(Date=seq.Date(as.Date(min(input.data$Date)), Sys.Date()-1, by=1), id=1:difftime(Sys.Date(), as.Date(min(input.data$Date))))
+    setkey(days, Date)
+    data <- input.data[Clicks>0,
+                       list(
+                         Impressions = sum(Impressions),
+                         Clicks = sum(Clicks),
+                         Spend = round(sum(Spend))
+                       ),
+                       by=list(Date, LineItem)]
+    data[, CTR:=round(100*Clicks/Impressions, 4)]
+    data[, CPC:=round(Spend/Clicks, 2)]
+    data[, CPM:=round(1000*Spend/Impressions, 2)]
+    data[, Date:=as.Date(Date)]
+    setkey(data, Date)
+    merge.data <- days[data]
+    plot.data <- data.frame(merge.data[id==slider_day, c("LineItem", x_axis, y_axis, size), with=FALSE])
+    
+    if (x_axis=="CTR" & y_axis=="CTR") {
+      tooltip_text <- paste0(x_axis, ": {point.x}%, ", y_axis, ": {point.y}%, ", size, ": {point.z}")
+    } else if (x_axis!="CTR" & y_axis!="CTR") {
+      tooltip_text <- paste0(x_axis, ": ${point.x}, ", y_axis, ": ${point.y}, ", size, ": {point.z}")
+    } else if (x_axis=="CTR" & y_axis!="CTR") {
+      tooltip_text <- paste0(x_axis, ": {point.x}%, ", y_axis, ": ${point.y}, ", size, ": {point.z}")
+    } else {
+      tooltip_text <- paste0(x_axis, ": ${point.x}, ", y_axis, ": {point.y}%, ", size, ": {point.z}")
+    }
+    
+    a <- Highcharts$new()
+    a$chart(type="bubble", height=768, width=1024, zoomType="xy")
+    a$plotOptions(bubble=list(tooltip=list(pointFormat=tooltip_text), animation=list(duration=200)))
+    a$title(text="Line Item Performance")
+    a$xAxis(title=list(text=ifelse(x_axis=="CTR", "CTR (%)", paste0(x_axis, " ($)"))))
+    a$yAxis(title=list(text=ifelse(y_axis=="CTR", "CTR (%)", paste0(y_axis, " ($)"))))
+    for (item in plot.data$LineItem) {
+      tmp <- subset(plot.data, plot.data$LineItem==item)
+      a$series(name=item, data=lapply(1:nrow(tmp), function(i) {list(tmp[i, x_axis], tmp[i, y_axis], tmp[i, size])}))
+    }
+    return(a)
+  })
+  
 })

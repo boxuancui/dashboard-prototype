@@ -11,7 +11,7 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          dateRangeInput("date", label="Choose Date Range:", start=(Sys.Date()-1), end=(Sys.Date()-1), min="2014-12-27", max=(Sys.Date()-1))
+          dateRangeInput("date", label="Choose Date Range:", start=(Sys.Date()-1), end=(Sys.Date()-1), min="2014-12-30", max=(Sys.Date()-1))
         ),
         mainPanel(
           tabsetPanel(
@@ -49,12 +49,30 @@ shinyUI(
     ),
     tabPanel(
       "Time Dimension",
-      sidebarLayout(
-        sidebarPanel(
-          width=3,
-          selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CPC", width=150)
+      tabsetPanel(
+        tabPanel(
+          "Campain Performance",
+          sidebarLayout(
+            sidebarPanel(
+              width=3,
+              selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CPC", width=150)
+            ),
+            mainPanel(showOutput("time_dim", "highcharts"))
+          )
         ),
-        mainPanel(showOutput("time_dim", "highcharts"))
+        tabPanel(
+          "Line Items Playback",
+          sidebarLayout(
+            sidebarPanel(
+              width=3,
+              selectInput("item_playback_x", label="x-axis", choices=c("CTR", "CPM", "CPC"), selected="CPC", width=100),
+              selectInput("item_playback_y", label="y-axis", choices=c("CTR", "CPM", "CPC"), selected="CTR", width=100),
+              selectInput("item_playback_size", label="Size", choices=c("Impressions", "Clicks", "Spend"), selected="Impressions", width=150),
+              sliderInput("item_playback_day", label="Day", min=1, max=as.numeric(Sys.Date() - as.Date("2014-12-30") - 1), value=1, step=1, animate=animationOptions(interval=1000, loop=TRUE))
+            ),
+            mainPanel(showOutput("item_playback", "highcharts"))
+          )
+        )
       )
     )
   )
