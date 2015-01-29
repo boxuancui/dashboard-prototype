@@ -11,7 +11,7 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          dateInput("date", label="Enter Date: ", value=(Sys.Date()-1), min="2014-12-27", max=(Sys.Date()-1))
+          dateRangeInput("date", label="Choose Date Range:", start=(Sys.Date()-1), end=(Sys.Date()-1), min="2014-12-27", max=(Sys.Date()-1))
         ),
         mainPanel(
           tabsetPanel(
@@ -30,7 +30,18 @@ shinyUI(
                 )
               )
             ),
-            tabPanel("Line Item", showOutput("item_ctr_cpc", "highcharts")),
+            tabPanel(
+              "Line Item",
+              tags$form(
+                class="form-inline",
+                wellPanel(
+                  selectInput("item_bubble_x", label="x-axis", choices=c("CTR", "CPM", "CPC"), selected="CPC", width=80),
+                  selectInput("item_bubble_y", label="y-axis", choices=c("CTR", "CPM", "CPC"), selected="CTR", width=80),
+                  selectInput("item_bubble_size", label="Size", choices=c("Impressions", "Clicks", "Spend"), selected="Impressions", width=150)
+                )
+              ),
+              showOutput("item_bubble", "highcharts")
+            ),
             tabPanel("Performance Table", dataTableOutput("item_stats"))
           )
         )
@@ -41,7 +52,7 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CPC")
+          selectInput("time_p", label="Primary Axis", choices=c("Impressions", "Clicks", "ViewThroughs", "Spend", "CTR", "CPM", "CPC"), selected = "CPC", width=150)
         ),
         mainPanel(showOutput("time_dim", "highcharts"))
       )

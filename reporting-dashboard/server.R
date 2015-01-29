@@ -34,9 +34,10 @@ shinyServer(function(input, output) {
   })
   
   campaign_data <- reactive({
-    input.date <- input$date
+    start.date <- input$date[1]
+    end.date <- input$date[2]
     
-    data <- raw_data()[Date==input.date,
+    data <- raw_data()[Date>=start.date & Date<=end.date,
                        list(
                          Impressions = as.double(sum(Impressions)),
                          Clicks = as.double(sum(Clicks)),
@@ -54,34 +55,43 @@ shinyServer(function(input, output) {
   
   output$campaign_stats <- renderTable({
     data <- campaign_data()
-    dcast(melt(data, id.vars="Group"), variable ~ Group)
-  })
+    output <- dcast.data.table(melt(data, id.vars="Group"), variable ~ Group)
+    setnames(output, "variable", "Metrics")
+    output <- data.frame(output)
+    format.bign <- which(output$Metrics %in% c("Impressions", "Clicks", "ViewThroughs", "Spend"))
+    format.smalln <- which(output$Metrics %in% c("CTR", "VTR"))
+    output[format.bign, -1] <- format(output[format.bign, -1], big.mark=",")
+    for (group in colnames(output)[-1]) {
+      output[format.smalln, group] <- percent(as.numeric(output[format.smalln, group]))
+    }
+    output
+  }, include.rownames=FALSE)
   
   output$campaign_ctr <- renderChart2({
     input.data <- campaign_data()
-    data <- data.frame(input.data[, list(CTR)])
+    data <- data.frame(input.data[, list(CTR=round(CTR*100,4))])
     rownames(data) <- c("Control", "Test")
     
     a <- Highcharts$new()
     a$chart(height=380, width=380, type="column")
-    a$title(text="CTR")
+    a$title(text="CTR (%)")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
-    a$data(data, dataLabels=list(enabled=TRUE))
+    a$data(data, dataLabels=list(enabled=TRUE, format="{y} %"))
     a
   })
   
   output$campaign_vtr <- renderChart2({
     input.data <- campaign_data()
-    data <- data.frame(input.data[, list(VTR)])
+    data <- data.frame(input.data[, list(round(VTR*100,4))])
     rownames(data) <- c("Control", "Test")
     
     a <- Highcharts$new()
     a$chart(height=380, width=380, type="column")
-    a$title(text="VTR")
+    a$title(text="VTR (%)")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
-    a$data(data, dataLabels=list(enabled=TRUE))
+    a$data(data, dataLabels=list(enabled=TRUE, format="{y} %"))
     a
   })
   
@@ -92,7 +102,7 @@ shinyServer(function(input, output) {
     
     a <- Highcharts$new()
     a$chart(height=380, width=380, type="column")
-    a$title(text="CPM")
+    a$title(text="CPM ($)")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
     a$data(data, dataLabels=list(enabled=TRUE))
@@ -106,7 +116,7 @@ shinyServer(function(input, output) {
     
     a <- Highcharts$new()
     a$chart(height=380, width=380, type="column")
-    a$title(text="CPC")
+    a$title(text="CPC ($)")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
     a$data(data, dataLabels=list(enabled=TRUE))
@@ -120,7 +130,7 @@ shinyServer(function(input, output) {
     
     a <- Highcharts$new()
     a$chart(height=380, width=380, type="column")
-    a$title(text="CPV")
+    a$title(text="CPV ($)")
     a$xAxis(categories=rownames(data))
     a$legend(enabled=FALSE)
     a$data(data, dataLabels=list(enabled=TRUE))
@@ -128,10 +138,11 @@ shinyServer(function(input, output) {
   })
   
   output$item_stats <- renderDataTable({
-    input.date <- input$date
+    start.date <- input$date[1]
+    end.date <- input$date[2]
     input.data <- raw_data()
     
-    data <- input.data[Date==input.date,
+    data <- input.data[Date>=start.date & Date<=end.date,
                        list(
                          Impressions = sum(Impressions),
                          Clicks = sum(Clicks),
@@ -151,29 +162,45 @@ shinyServer(function(input, output) {
     data
   })
   
-  output$item_ctr_cpc <- renderChart2({
-    input.date <- input$date
+  output$item_bubble <- renderChart2({
+    start.date <- input$date[1]
+    end.date <- input$date[2]
+    x_axis <- input$item_bubble_x
+    y_axis <- input$item_bubble_y
+    size <- input$item_bubble_size
     input.data <- raw_data()
     
-    data <- input.data[Date==input.date & Clicks>0,
+    data <- input.data[Date>=start.date & Date<=end.date & Clicks>0,
                        list(
                          Impressions = sum(Impressions),
                          Clicks = sum(Clicks),
                          Spend = round(sum(Spend))
                        ),
                        by=list(LineItem)]
-    data[, CTR:=Clicks/Impressions]
+    data[, CTR:=round(100*Clicks/Impressions, 4)]
     data[, CPC:=round(Spend/Clicks, 2)]
-    plot.data <- data.frame(data[, list(LineItem, Impressions, CTR, CPC)])
+    data[, CPM:=round(1000*Spend/Impressions, 2)]
+    plot.data <- data.frame(data[, c("LineItem", x_axis, y_axis, size), with=FALSE])
+    
+    if (x_axis=="CTR" & y_axis=="CTR") {
+      tooltip_text <- paste0(x_axis, ": {point.x}%, ", y_axis, ": {point.y}%, ", size, ": {point.z}")
+    } else if (x_axis!="CTR" & y_axis!="CTR") {
+      tooltip_text <- paste0(x_axis, ": ${point.x}, ", y_axis, ": ${point.y}, ", size, ": {point.z}")
+    } else if (x_axis=="CTR" & y_axis!="CTR") {
+      tooltip_text <- paste0(x_axis, ": {point.x}%, ", y_axis, ": ${point.y}, ", size, ": {point.z}")
+    } else {
+      tooltip_text <- paste0(x_axis, ": ${point.x}, ", y_axis, ": {point.y}%, ", size, ": {point.z}")
+    }
     
     a <- Highcharts$new()
     a$chart(type="bubble", height=768, width=1024, zoomType="xy")
+    a$plotOptions(bubble=list(tooltip=list(pointFormat=tooltip_text)))
     a$title(text="Line Item Performance")
-    a$xAxis(title=list(text="CPC"))
-    a$yAxis(title=list(text="CTR"))
+    a$xAxis(title=list(text=ifelse(x_axis=="CTR", "CTR (%)", paste0(x_axis, " ($)"))))
+    a$yAxis(title=list(text=ifelse(y_axis=="CTR", "CTR (%)", paste0(y_axis, " ($)"))))
     for (item in plot.data$LineItem) {
       tmp <- subset(plot.data, plot.data$LineItem==item)
-      a$series(name=item, data=lapply(1:nrow(tmp), function(i) {list(tmp[i, "CPC"], tmp[i, "CTR"], tmp[i, "Impressions"])}))
+      a$series(name=item, data=lapply(1:nrow(tmp), function(i) {list(tmp[i, x_axis], tmp[i, y_axis], tmp[i, size])}))
     }
     return(a)
   })
@@ -190,8 +217,8 @@ shinyServer(function(input, output) {
                          Spend = sum(Spend)
                        ),
                        by=list(Group, Date)]
-    data[, CTR:=Clicks/Impressions]
-    data[, VTR:=ViewThroughs/Impressions]
+    data[, CTR:=round(100*Clicks/Impressions, 4)]
+    data[, VTR:=round(100*ViewThroughs/Impressions, 4)]
     data[, CPM:=round(1000*Spend/Impressions, 2)]
     data[, CPC:=round(Spend/Clicks, 2)]
     data[, CPV:=round(Spend/ViewThroughs, 2)]
@@ -204,7 +231,7 @@ shinyServer(function(input, output) {
     a$chart(height=768, width=1024, zoomType="xy")
     a$title(text="Daily Test Line Items Performance")
     a$xAxis(categories=rownames(plot.data), labels=list(rotation=-45))
-    a$yAxis(title=list(text=time_p))
+    a$yAxis(title=list(text=ifelse(time_p %in% c("CTR", "VTR"), paste0(time_p, " (%)"), time_p)))
     a$data(plot.data)
     return(a)
   })
