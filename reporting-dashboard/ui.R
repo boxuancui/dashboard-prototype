@@ -11,7 +11,7 @@ shinyUI(
       sidebarLayout(
         sidebarPanel(
           width=3,
-          dateRangeInput("date", label="Choose Date Range:", start=(Sys.Date()-1), end=(Sys.Date()-1), min="2014-12-30", max=(Sys.Date()-1))
+          dateRangeInput("date", label="Choose Date Range:", start="2015-01-05", end="2015-02-01", min="2014-12-10", max="2015-02-02")
         ),
         mainPanel(
           tabsetPanel(
@@ -68,7 +68,7 @@ shinyUI(
               selectInput("item_playback_x", label="x-axis", choices=c("CTR", "CPM", "CPC"), selected="CPC", width=100),
               selectInput("item_playback_y", label="y-axis", choices=c("CTR", "CPM", "CPC"), selected="CTR", width=100),
               selectInput("item_playback_size", label="Size", choices=c("Impressions", "Clicks", "Spend"), selected="Impressions", width=150),
-              sliderInput("item_playback_day", label="Day", min=1, max=as.numeric(Sys.Date() - as.Date("2014-12-30") - 1), value=1, step=1, animate=animationOptions(interval=1000, loop=TRUE))
+              sliderInput("item_playback_day", label="Day", min=1, max=as.numeric(as.Date("2015-02-01") - as.Date("2015-01-05")), value=1, step=1, animate=animationOptions(interval=1000, loop=TRUE))
             ),
             mainPanel(showOutput("item_playback", "highcharts"))
           )

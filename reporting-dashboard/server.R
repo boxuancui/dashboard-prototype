@@ -209,7 +209,7 @@ shinyServer(function(input, output) {
     time_p <- input$time_p
     input.data <- raw_data()
     
-    data <- input.data[,
+    data <- input.data[Date>="2015-01-05" & Date<="2015-02-01",
                        list(
                          Impressions = sum(Impressions),
                          Clicks = sum(Clicks),
@@ -243,7 +243,7 @@ shinyServer(function(input, output) {
     slider_day <- input$item_playback_day
     input.data <- raw_data()
     
-    days <- data.table(Date=seq.Date(as.Date(min(input.data$Date)), Sys.Date()-1, by=1), id=1:difftime(Sys.Date(), as.Date(min(input.data$Date))))
+    days <- data.table(Date=seq.Date(as.Date("2015-01-05"), as.Date("2015-02-01"), by=1), id=1:difftime(as.Date("2015-02-02"), as.Date("2015-01-05")))
     setkey(days, Date)
     data <- input.data[Clicks>0,
                        list(
