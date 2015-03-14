@@ -4,7 +4,7 @@ library(reshape2)
 library(scales)
 library(rCharts)
 
-shinyServer(function(input, output) {
+shinyServer(function(input, output, session) {
   raw_data <- reactive({
     raw <- fread("data/reporting_data.csv", sep=",")
     raw[, PlacementKey:=substr(Placement, 1, 6)]
